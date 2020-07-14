@@ -4,14 +4,14 @@ import torch
 
 from torch.nn.parameter import Parameter
 from torch.nn.modules.module import Module
-
+from torch.nn.init import xavier_uniform_
 
 class GraphConvolution(Module):
     """
     Simple GCN layer, similar to https://arxiv.org/abs/1609.02907
     """
 
-    def __init__(self, in_features, out_features, bias=True):
+    def __init__(self, in_features, out_features, bias=True, init_scheme="default"):
         super(GraphConvolution, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -20,8 +20,18 @@ class GraphConvolution(Module):
             self.bias = Parameter(torch.FloatTensor(out_features))
         else:
             self.register_parameter('bias', None)
-        self.reset_parameters()
+        if init_scheme == "default":
+            self.reset_parameters()
+        elif init_scheme == "xavier":
+            self.init_xavier()
+        else:
+            raise ValueError("init_scheme not supported.")
 
+    def init_xavier(self):
+        xavier_uniform_(self.weight.data)
+        if self.bias is not None:
+            self.bias.data.zero_()
+        
     def reset_parameters(self):
         stdv = 1. / math.sqrt(self.weight.size(1))
         self.weight.data.uniform_(-stdv, stdv)
